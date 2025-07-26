@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crypto Crash Game</title>
+</head>
+<body>
+  <h2>Create New Player</h2>
+  <label>Username:</label>
+  <input type="text" id="newUsername" placeholder="Enter username" /><br><br>
+
+  <label>BTC:</label>
+  <input type="number" id="btc" step="0.0001" placeholder="e.g. 0.005" /><br><br>
+
+  <label>ETH:</label>
+  <input type="number" id="eth" step="0.01" placeholder="e.g. 0.1" /><br><br>
+
+  <button onclick="createPlayer()">Create Player</button>
+
+  <p><strong>Generated Player ID:</strong> <span id="createdId"></span></p>
+
+  <hr>
+
+  <h1>Crypto Crash Game</h1>
+
+  <label>Player ID:</label>
+  <input type="text" id="playerId" placeholder="Enter your Player ID" style="width: 300px;" /><br><br>
+
+  <label>Bet Amount (USD):</label>
+  <input type="number" id="amount" placeholder="e.g. 10" /><br><br>
+
+  <label>Currency:</label>
+  <select id="currency">
+    <option value="BTC">BTC</option>
+    <option value="ETH">ETH</option>
+  </select><br><br>
+
+  <button onclick="placeBet()"> Place Bet</button>
+  <button onclick="cashout()"> Cash Out</button>
+
+  <hr>
+  <p><strong>Multiplier:</strong> <span id="multiplier">Waiting...</span></p>
+  <div id="log" style="margin-top: 20px;"></div>
+
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  <script>
+    const socket = io("http://localhost:3000");
+    const multiplierDisplay = document.getElementById("multiplier");
+    const logDisplay = document.getElementById("log");
+
+    socket.on('connect', () => {
+      console.log("Connected to WebSocket server");
+    });
+
+    socket.on('roundStart', (data) => {
+      log(`Round #${data.roundNumber} started `);
+    });
+
+    socket.on('multiplierUpdate', (value) => {
+      multiplierDisplay.textContent = `${value}x`;
+    });
+
+    socket.on('playerCashout', (data) => {
+      log(`Player ${data.playerId} cashed out at ${data.multiplier}x for $${data.payoutUSD.toFixed(2)}`);
+    });
+
+    socket.on('roundCrash', (data) => {
+      log(`Round #${data.roundNumber} crashed at ${data.crashPoint}x`);
+    });
+
+    socket.on('errorMessage', (msg) => {
+      log(`${msg.error}`);
+    });
+
+    function placeBet() {
+      const playerId = document.getElementById('playerId').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value.trim());
+      const currency = document.getElementById('currency').value;
+
+      if (!playerId || isNaN(amount) || amount <= 0) {
+        alert("Enter valid Player ID and Bet Amount.");
+        return;
+      }
+
+      fetch('http://localhost:3000/api/game/bet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, amount, currency })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.message === "Bet placed") {
+          log(`Bet placed: $${amount} in ${currency}`);
+        } else {
+          log(`Bet failed: ${data.message}`);
+        }
+      })
+      .catch(err => {
+        log(`Error placing bet: ${err.message}`);
+      });
+    }
+
+    function cashout() {
+      const playerId = document.getElementById('playerId').value.trim();
+      if (!playerId) {
+        alert("Please enter your Player ID.");
+        return;
+      }
+      socket.emit('cashout', { playerId });
+    }
+
+    function log(message) {
+      logDisplay.innerHTML += `<div>${new Date().toLocaleTimeString()} - ${message}</div>`;
+    }
+
+    function createPlayer() {
+  const username = document.getElementById('newUsername').value.trim();
+  const btc = parseFloat(document.getElementById('btc').value.trim()) || 0;
+  const eth = parseFloat(document.getElementById('eth').value.trim()) || 0;
+
+  if (!username) {
+    alert("Username is required!");
+    return;
+  }
+
+  fetch('http://localhost:3000/api/player/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, BTC: btc, ETH: eth })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.player && data.player._id) {
+        document.getElementById('createdId').textContent = data.player._id;
+        alert("Player created! Copy the ID and use it to play.");
+      } else {
+        alert("Player creation failed");
+      }
+    })
+    .catch(err => {
+      console.error("Player creation error:", err);
+      alert("Server error creating player");
+    });
+}
+
+</script>
+</body>
+</html>

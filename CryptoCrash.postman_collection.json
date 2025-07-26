@@ -1,0 +1,62 @@
+{
+  "info": {
+    "_postman_id": "b0aaf5a6-1c11-4a5d-b315-crypto-crash",
+    "name": "CryptoCrash",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Wallet Balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/player/{{playerId}}/wallet",
+          "host": ["http://localhost:3000"],
+          "path": ["api", "player", "{{playerId}}", "wallet"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Place Bet",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"playerId\": \"{{playerId}}\",\n  \"amount\": 10,\n  \"currency\": \"BTC\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/game/bet",
+          "host": ["http://localhost:3000"],
+          "path": ["api", "game", "bet"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cash Out",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"playerId\": \"{{playerId}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/game/cashout",
+          "host": ["http://localhost:3000"],
+          "path": ["api", "game", "cashout"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "playerId",
+      "value": "replace_with_your_player_id"
+    }
+  ]
+}
